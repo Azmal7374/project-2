@@ -1,0 +1,7 @@
+{
+  "explorer.autoReveal": true,
+  "explorer.confirmUndo": "default",
+  "explorer.enableUndo": false,
+  "explorer.expandSingleFolderWorkspaces": true,
+  "explorer.excludeGitIgnore": true
+}
