@@ -6,6 +6,7 @@ import AppError from '../errors/AppError';
 import { TUserRole } from '../modules/user/user.interface';
 import { User } from '../modules/user/user.model';
 import catchAsync from '../utils/catchAsync';
+import { decode } from 'punycode';
 
 const auth = (...requiredRoles:  TUserRole[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -17,12 +18,17 @@ const auth = (...requiredRoles:  TUserRole[]) => {
     }
 
     // checking if the given token is valid
-    const decoded = jwt.verify(
-      token,
-      config.jwt_access_secret as string,
-    ) as JwtPayload;
-
-    const { role, userId, iat } = decoded;
+    
+    let decoded;
+    try{
+      decoded = jwt.verify(
+        token,
+        config.jwt_access_secret as string,
+      ) as JwtPayload;
+    } catch(err) {
+      throw new AppError(httpStatus.UNAUTHORIZED, 'Unauthorized!','');
+    }
+    const {  role, userId, iat } = decoded;
 
     // checking if the user is exist
     const user = await User.isUserExistsByCustomId(userId);

@@ -1,30 +1,30 @@
-import { ErrorRequestHandler, } from 'express';
-import { ZodError} from 'zod';
-import { TErrorSources } from '../interface/error';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { ErrorRequestHandler} from 'express';
+import { ZodError } from 'zod';
 import config from '../config';
-import handleZodError from '../errors/hnadleZodError';
-import handleValidationError from '../errors/handleValidationError';
-import handleCastError from '../errors/hnadleCastError';
-import handleDuplicateError from '../errors/handleDuplicateError';
 import AppError from '../errors/AppError';
+import handleDuplicateError from '../errors/handleDuplicateError';
+import handleValidationError from '../errors/handleValidationError';
+import { TErrorSources } from '../interface/error';
+import handleZodError from '../errors/hnadleZodError';
+import handleCastError from '../errors/hnadleCastError';
 
-const golbalErrorHandelers: ErrorRequestHandler = (err, req, res) => {
-  //setting default Value
-  let statusCode =500;
-  let message = 'Something went wrong';
-
+const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+  //setting default values
+  let statusCode = 500;
+  let message = 'Something went wrong!';
   let errorSources: TErrorSources = [
     {
       path: '',
-      message: 'something Went Wrong',
+      message: 'Something went wrong',
     },
   ];
 
   if (err instanceof ZodError) {
     const simplifiedError = handleZodError(err);
-    statusCode = simplifiedError.statusCode;
-    message = simplifiedError.message;
-    errorSources = simplifiedError.errorSources;
+    statusCode = simplifiedError?.statusCode;
+    message = simplifiedError?.message;
+    errorSources = simplifiedError?.errorSources;
   } else if (err?.name === 'ValidationError') {
     const simplifiedError = handleValidationError(err);
     statusCode = simplifiedError?.statusCode;
@@ -35,37 +35,49 @@ const golbalErrorHandelers: ErrorRequestHandler = (err, req, res) => {
     statusCode = simplifiedError?.statusCode;
     message = simplifiedError?.message;
     errorSources = simplifiedError?.errorSources;
-  } else if (err?.name === 1100) {
+  } else if (err?.code === 11000) {
     const simplifiedError = handleDuplicateError(err);
     statusCode = simplifiedError?.statusCode;
     message = simplifiedError?.message;
     errorSources = simplifiedError?.errorSources;
-  }else if (err instanceof AppError) {
-    
+  } else if (err instanceof AppError) {
     statusCode = err?.statusCode;
-    message = err?.message;
-    errorSources = [{
-      path:'',
-      message: err?.message
-    }];
-  }else if (err instanceof Error) {
-    
-   
-    message = err?.message;
-    errorSources = [{
-      path:'',
-      message: err?.message
-    }];
+    message = err.message;
+    errorSources = [
+      {
+        path: '',
+        message: err?.message,
+      },
+    ];
+  } else if (err instanceof Error) {
+    message = err.message;
+    errorSources = [
+      {
+        path: '',
+        message: err?.message,
+      },
+    ];
   }
 
-
+  //ultimate return
   return res.status(statusCode).json({
     success: false,
     message,
     errorSources,
-    // err,
+    err,
     stack: config.NODE_ENV === 'development' ? err?.stack : null,
   });
 };
 
-export default golbalErrorHandelers;
+export default globalErrorHandler;
+
+//pattern
+/*
+success
+message
+errorSources:[
+  path:'',
+  message:''
+]
+stack
+*/
